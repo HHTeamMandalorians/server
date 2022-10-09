@@ -2,9 +2,9 @@
   "name": "librevote-server",
   "version": "1.0.0-beta1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "tsc && node ."
   },
   "repository": {
     "type": "git",
@@ -26,5 +26,10 @@
   "bugs": {
     "url": "https://github.com/HHTeamMandalorians/server/issues"
   },
-  "homepage": "https://github.com/HHTeamMandalorians/server#readme"
+  "homepage": "https://github.com/HHTeamMandalorians/server#readme",
+  "devDependencies": {
+    "@tsconfig/node16-strictest": "^1.0.4",
+    "@types/node": "^18.8.3",
+    "typescript": "^4.8.4"
+  }
 }
