@@ -1,0 +1,29 @@
+{
+  "name": "librevote-server",
+  "version": "1.0.0-beta1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HHTeamMandalorians/server.git"
+  },
+  "keywords": [
+    "vote",
+    "openvote",
+    "demokracja",
+    "hack",
+    "heroes",
+    "obywatel",
+    "civilian",
+    "democracy"
+  ],
+  "author": "HHTeamMandalorians",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HHTeamMandalorians/server/issues"
+  },
+  "homepage": "https://github.com/HHTeamMandalorians/server#readme"
+}
