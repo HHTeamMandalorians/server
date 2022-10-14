@@ -15,12 +15,16 @@
     "importHelpers": true,
     "importsNotUsedAsValues": "error",
     "newLine": "lf",
+    "noEmitOnError": true,
     /* Interop Constraints */
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     /* Type Checking */
     "strict": true,
-    "skipLibCheck": true,
-    "noEmitOnError": true
-  }
+    "skipLibCheck": true
+  },
+  "files": [
+    // "main" script of the server
+    "source/server/main.ts"
+  ]
 }
