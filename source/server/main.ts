@@ -47,7 +47,7 @@ const argvOptions = Object.freeze({
 } as const);
 
 const argv = parseArgs({options: argvOptions});
-const rateLimit = 10;
+const rateLimit = 5;
 
 let port = 8080;
 
@@ -58,6 +58,29 @@ if(isNaN(port)) {
   console.error(logger.error, logger.server, "Invalid value of the 'port', should be an integer.");
   console.warn(logger.warn, logger.server, "Using default port (8080) instead…")
   port = 8080;
+}
+
+function rateLimitExceed(req:IncomingMessage,res:ServerResponse) {
+  const client = req.socket.address();
+  const body = JSON.stringify({status: "API rate limit exceed!"});
+  if("address" in client) {
+    const rate = hosts[client.address] = (hosts[client.address]??0)+1;
+    if(rate > rateLimit) {
+      res.writeHead(429);
+      res.write(body);
+      res.end();
+      return true;
+    }
+    if(rate === rateLimit)
+      setTimeout(() => hosts[client.address] = 0,1000*60*5);
+    res.setHeader("X-Rate-Limit",rateLimit-(hosts[client.address]??0));
+  } else {
+    res.writeHead(429);
+    res.write(body);
+    res.end();
+    return true;
+  }
+  return false;
 }
 
 function isRequest<T extends endpoints>(type:T, object:unknown): object is Request<T> {
@@ -95,22 +118,6 @@ async function parseBody<T extends BufferEncoding|undefined>(request:IncomingMes
 }
 
 async function requestHandler(request:IncomingMessage, response: ServerResponse, protocolVersion: protocolVersion) {
-  const client = request.socket.address();
-  if("address" in client) {
-    const rate = hosts[client.address] = (hosts[client.address]??0)+1;
-    if(rate > rateLimit) {
-      response.writeHead(429);
-      response.end();
-      return;
-    }
-    if(rate === rateLimit)
-      setTimeout(() => hosts[client.address] = 0,1000*60*2);
-    response.setHeader("X-Rate-Limit",rateLimit-(hosts[client.address]??0));
-  } else {
-    response.writeHead(429);
-    response.end();
-    return;
-  }
   // Handle unknown server errors
   request.on("error", (error) => {
     response.setHeader("Content-Type","application/json");
@@ -152,6 +159,8 @@ async function requestHandler(request:IncomingMessage, response: ServerResponse,
       response.end();
       break;
     case `/api/v${protocolVersion}/vote`:
+      if(rateLimitExceed(request,response))
+        return;
       if(request.method !== "POST") {
         response.writeHead(405,"Method not allowed, use 'POST' instead.");
         response.write(JSON.stringify({
