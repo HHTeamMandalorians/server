@@ -23,6 +23,8 @@ type Request<T> = T extends "vote" ? {
 
 type EncodedBuffer<T> = T extends BufferEncoding ? string : Buffer;
 
+let hosts: Record<string,number> = {};
+
 // Set default encoding for STDOUT and STDERR to UTF-8
 process.stdout.setDefaultEncoding("utf8");
 process.stderr.setDefaultEncoding("utf8");
@@ -44,7 +46,19 @@ const argvOptions = Object.freeze({
   }
 } as const);
 
-const argv = parseArgs({options: argvOptions})
+const argv = parseArgs({options: argvOptions});
+const rateLimit = 10;
+
+let port = 8080;
+
+if(typeof argv.values.port === "string")
+  port = parseInt(argv.values.port);
+
+if(isNaN(port)) {
+  console.error(logger.error, logger.server, "Invalid value of the 'port', should be an integer.");
+  console.warn(logger.warn, logger.server, "Using default port (8080) instead…")
+  port = 8080;
+}
 
 function isRequest<T extends endpoints>(type:T, object:unknown): object is Request<T> {
   if(typeof object !== "object" || object === null)
@@ -80,6 +94,22 @@ async function parseBody<T extends BufferEncoding|undefined>(request:IncomingMes
 }
 
 async function requestHandler(request:IncomingMessage, response: ServerResponse, protocolVersion: protocolVersion) {
+  const client = request.socket.address();
+  if("address" in client) {
+    const rate = hosts[client.address] = (hosts[client.address]??0)+1;
+    if(rate > rateLimit) {
+      response.writeHead(429);
+      response.end();
+      return;
+    }
+    if(rate === rateLimit)
+      setTimeout(() => hosts[client.address] = 0,1000*60*2);
+    response.setHeader("X-Rate-Limit",rateLimit-(hosts[client.address]??0));
+  } else {
+    response.writeHead(429);
+    response.end();
+    return;
+  }
   // Handle unknown server errors
   request.on("error", (error) => {
     response.setHeader("Content-Type","application/json");
@@ -155,17 +185,6 @@ function createServer(protocol: protocolVersion, port: number) {
   server.listen(port);
   server.on("listening", () => console.log(logger.log+" %s.", logger.server, "Listening at", kolor.blue(kolor.underline(port.toString()))));
   return server;
-}
-
-let port = 8080;
-
-if(typeof argv.values.port === "string")
-  port = parseInt(argv.values.port);
-
-if(isNaN(port)) {
-  console.error(logger.error, logger.server, "Invalid value of the 'port', should be an integer.");
-  console.warn(logger.warn, logger.server, "Using default port (8080) instead…")
-  port = 8080;
 }
 
 createServer(1,port);
