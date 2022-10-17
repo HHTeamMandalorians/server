@@ -135,6 +135,20 @@ async function requestHandler(request:IncomingMessage, response: ServerResponse,
   }
   // Handle `/api/v1 requests.
   switch(request.url) {
+    case `/api/v${protocolVersion}/candidates`:
+      if(request.method !== "GET") {
+        response.writeHead(405,"Method not allowed, use 'GET' instead.");
+        response.write(JSON.stringify({
+          status: `The current URL path does not accept '${request.method??"UNKNOWN"}' method. 'GET' should be used instead.`
+        }));
+        response.end();
+        return;
+      }
+      // TODO: Reading and validating data from the specific file.
+      response.writeHead(200);
+      response.write(JSON.stringify([]));
+      response.end();
+      break;
     case `/api/v${protocolVersion}/vote`:
       if(request.method !== "POST") {
         response.writeHead(405,"Method not allowed, use 'POST' instead.");
