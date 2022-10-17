@@ -1,7 +1,7 @@
 /* Node.js imports */
 
 import { createServer as createHTTPServer } from "http";
-import { parseArgs } from "util";
+import { parseArgs, inspect } from "util";
 //import { createWriteStream } from "fs";
 //import { readFile, watch } from "fs/promises";
 
@@ -76,7 +76,8 @@ async function parseBody<T extends BufferEncoding|undefined>(request:IncomingMes
   let chunkArray: number[] = [];
   const listener = (chunk: Buffer) => {
     // TODO: Show chunk hash, detect UTF-8 data.
-    console.log(logger.log+" (%s)", logger.handler, "Received a chunk of data", encoding ? encoding+":"+chunk.toString(encoding) : "base64:"+chunk.toString("base64"));
+    const message = (encoding??"raw")+':'+inspect(encoding ? chunk.toString(encoding) : chunk,true,null,true);
+    console.log(logger.log+" (%s)", logger.handler, "Received a chunk of data", message);
     chunkArray.push(...chunk);
   }
   // Gather chunks to the `chunkArray`.
@@ -120,12 +121,13 @@ async function requestHandler(request:IncomingMessage, response: ServerResponse,
         description: error.message
       }
     }));
-  });
+    response.end();
+  });    
   // Set response MIME type to JSON for API requests.
   if(request.url?.startsWith("/api/") === true) {
     response.setHeader("Content-Type","application/json");
     if(request.headers.authorization === undefined) {
-      response.writeHead(401, "Please authenticate with USB voting card.")
+      response.writeHead(401, "Please authenticate with USB voting card.");
       response.write(JSON.stringify({
         status: "Client is unauthorized, please set 'AUTHORIZE' header to a valid value."
       }));
@@ -154,22 +156,23 @@ async function requestHandler(request:IncomingMessage, response: ServerResponse,
         response.writeHead(405,"Method not allowed, use 'POST' instead.");
         response.write(JSON.stringify({
           status: `The current URL path does not accept '${request.method??"UNKNOWN"}' method. 'POST' should be used instead.`
-        }))
+        }));
         response.end();
         return;
       }
       try {
-        const body = JSON.parse(await parseBody(request,"utf8"))
+        const body = JSON.parse(await parseBody(request,"utf8"));
         if(isRequest("vote", body)) {
           response.writeHead(200,"Vote has been \"given\"!");
           response.write(JSON.stringify({status: `Vote has been \"given\" on candidate '${body.candidate}'!`}));
           response.end();
+        } else {
+          throw new TypeError("Invalid structure of the body in the message.")
         }
       } catch {
         response.writeHead(400, "Bad request");
         response.write(JSON.stringify({status: "Invalid structure of the body in the message."}));
         response.end();
-        return;
       }
       break;
     default:
