@@ -2,8 +2,9 @@
 
 import { createServer as createHTTPServer } from "http";
 import { parseArgs, inspect } from "util";
-//import { createWriteStream } from "fs";
-//import { readFile, watch } from "fs/promises";
+import { resolve } from "path";
+import { existsSync, /*createWriteStream*/ } from "fs";
+import { readFile, /*watch*/ } from "fs/promises";
 
 /* External module imports */
 
@@ -48,6 +49,17 @@ const argvOptions = Object.freeze({
 
 const argv = parseArgs({options: argvOptions});
 const rateLimit = 5;
+const candidatesPath = resolve(__dirname, "../../config/candidates.json");
+const candidates:Promise<string[]> = existsSync(candidatesPath) ?
+  readFile(candidatesPath, {encoding: "utf8"})
+    .then(data => JSON.parse(data) as unknown)
+    .then(unknown => Array.isArray(unknown) ? unknown as unknown[] : [])
+    .then(array => array
+      .map(value => typeof value === "string" ? value : undefined)
+      .filter((value => value !== undefined) as (value:string|undefined) => value is string)
+    )
+    .catch(() => []) :
+  Promise.resolve([]);
 
 let port = 8080;
 
@@ -156,9 +168,8 @@ async function requestHandler(request:IncomingMessage, response: ServerResponse,
         response.end();
         return;
       }
-      // TODO: Reading and validating data from the specific file.
       response.writeHead(200);
-      response.write(JSON.stringify([]));
+      response.write(JSON.stringify(await candidates));
       response.end();
       break;
     case `/api/v${protocolVersion}/vote`:
