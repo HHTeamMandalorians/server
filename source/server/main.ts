@@ -131,17 +131,20 @@ async function requestHandler(request:IncomingMessage, response: ServerResponse,
     response.end();
   });    
   // Set response MIME type to JSON for API requests.
-  if(request.url?.startsWith("/api/") === true) {
+  /*if(request.url?.startsWith("/api/") === true) {
     response.setHeader("Content-Type","application/json");
-    if(request.headers.authorization === undefined) {
+    // TODO: CORS
+    response.setHeader("Access-Control-Allow-Origin", "*");
+    response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Authorization, Authorization, Origin, Accept");
+    if(request.headers.authorization === undefined || request.headers["X-Authorization"] !== undefined) {
       response.writeHead(401, "Please authenticate with USB voting card.");
       response.write(JSON.stringify({
-        status: "Client is unauthorized, please set 'AUTHORIZE' header to a valid value."
+        status: "Client is unauthorized, please set 'Authorization' header to a valid value."
       }));
       response.end();
       return; 
     }
-  }
+  }*/
   // Handle `/api/v1 requests.
   switch(request.url) {
     case `/api/v${protocolVersion}/candidates`:
