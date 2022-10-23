@@ -2,8 +2,9 @@
   "name": "librevote-server",
   "version": "1.0.0-beta2",
   "description": "A REST server implementation of LibreVote voting system.",
-  "main": "dist/main.js",
+  "main": "dist/server/main.js",
   "scripts": {
+    "prepare": "tsc && node dist/cli/generate.js",
     "start": "tsc && node ."
   },
   "repository": {
@@ -33,9 +34,10 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
+    "@faker-js/faker": "^7.6.0",
     "@spacingbat3/kolor": "^3.0.1"
   },
   "engines": {
-    "node": "^18.3.0"
+    "node": "^18.3.0 || ^19.0.0"
   }
 }

@@ -25,6 +25,8 @@
   },
   "files": [
     // "main" script of the server
-    "source/server/main.ts"
+    "source/server/main.ts",
+    // "generate" script for random data generation
+    "source/cli/generate.ts"
   ]
 }
